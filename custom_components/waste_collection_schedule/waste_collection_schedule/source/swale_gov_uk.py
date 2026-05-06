@@ -49,10 +49,17 @@ class Source:
         self._postcode: str = postcode
 
     def append_year(self, d: str) -> date:
-        # Website doesn't return the year.
-        # Append the current year, and then check to see if the date is in the past.
-        # If it is, increment the year by 1.
+        # Website doesn't always return the year.
+        # If the string already contains a 4-digit year as the last token,
+        # parse it directly — appending another year would cause strptime to
+        # fail with "unconverted data remains: <year>".
+        # Otherwise append the current year and roll forward if the resulting
+        # date is more than 31 days in the past.
         today: date = datetime.now().date()
+        parts = d.strip().split()
+        if len(parts) >= 3 and parts[-1].isdigit() and len(parts[-1]) == 4:
+            return datetime.strptime(d.strip(), "%d %B %Y").date()
+
         year: int = today.year
         dt: date = datetime.strptime(f"{d} {str(year)}", "%d %B %Y").date()
         if (dt - today) < timedelta(days=-31):
@@ -177,3 +184,4 @@ class Source:
             )
 
         return entries
+
